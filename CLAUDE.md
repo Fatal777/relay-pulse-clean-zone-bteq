@@ -1,3 +1,119 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+---
+
+## What This App Is
+
+**Relay** — a team context intelligence dashboard for dev teams. Connects to GitHub, ingests meeting notes, and surfaces conflicts, decisions, and PR context in one place.
+
+Three core features, each backed by a Claude-powered Lyzr agent:
+1. **Conflict Radar** — fetches real GitHub branches via Octokit, detects files touched by multiple branches, feeds data to the Conflict Analysis Agent
+2. **Decision Log** — pastes meeting notes → Decision Extraction Agent returns structured decisions → saved to MongoDB
+3. **PR Review** — fetches open PRs from GitHub + active branch context → PR Review Agent returns review with team context
+
+Demo repo: `Fatal777/relay-demo-conflicts` (public, has 5 branches and 3 open PRs with deliberate conflicts)
+
+---
+
+## Dev Commands
+
+```bash
+npm run dev    # Turbopack dev server on port 3333
+npm run build  # Production build
+npm run lint   # ESLint
+```
+
+---
+
+## Project Structure
+
+This app deviates from the default Lyzr monolithic `page.tsx` pattern — it uses a multi-page layout with sections:
+
+```
+app/
+├── page.tsx                    # Root: auth wrapper, state, all handlers, routing
+├── sections/
+│   ├── Sidebar.tsx             # Left nav (Overview, Decisions, Pull Requests, Settings)
+│   ├── HomePage.tsx            # Overview: Activity Feed, Active Team, Conflict Radar
+│   ├── DecisionsPage.tsx       # Decision extraction + searchable history
+│   ├── PullRequestsPage.tsx    # PR list (real or sample) + AI review panel
+│   └── SettingsPage.tsx        # GitHub repo connect + team member management
+├── api/
+│   ├── github/context/route.ts # Custom: fetches branches, conflicts, open PRs via Octokit
+│   ├── decisions/route.ts      # CRUD for Decision model
+│   ├── team-members/route.ts   # CRUD for TeamMember model
+│   ├── github-settings/route.ts# CRUD for GithubSetting model
+│   └── agent/route.ts          # Lyzr agent proxy (submit + poll)
+models/
+├── Decision.ts                 # decision_text, decided_date, feature_area, confidence
+├── TeamMember.ts               # name, github_username, role
+└── GithubSetting.ts            # repo_owner, repo_name, github_token_ref
+```
+
+All state lives in `app/page.tsx` — `activePage` string drives which section renders. Handlers (`handleAnalyzeConflicts`, `handleReviewPR`, `handleExtractDecisions`) all fetch `/api/github/context` for live branch data before calling agents.
+
+---
+
+## Agent IDs
+
+| Constant | ID | Purpose |
+|---|---|---|
+| `DECISION_AGENT_ID` | `69ec53125a4288a9a1e231a4` | Extracts structured decisions from free-text notes |
+| `PR_REVIEW_AGENT_ID` | `69ec532e38d52edd6342f1db` | Reviews PRs with injected team/branch context |
+| `CONFLICT_AGENT_ID` | `69ec532f950816878e84f0fa` | Analyzes branch overlaps, returns severity + recommendations |
+
+All three use `claude-sonnet-4-6`. Response schemas are in `response_schemas/`.
+
+---
+
+## GitHub Context API (`/api/github/context`)
+
+Custom route — NOT part of the Lyzr scaffold. Query params: `owner`, `repo`, `token` (optional for public repos).
+
+Returns:
+```typescript
+{
+  branches: { name, author, files[] }[]       // feature branches only (excludes main/master)
+  conflictingFiles: { file, branches[] }[]    // files touched by 2+ branches
+  hasConflicts: boolean
+  pullRequests: { number, title, author, branch, filesChanged[], additions, deletions, body, url }[]
+}
+```
+
+This data is injected into agent messages before calling Conflict/PR Review agents. Without it the agents only get the repo name as context.
+
+---
+
+## Environment Variables
+
+```
+LYZR_API_KEY=          # Required — Lyzr agent calls
+DATABASE_URL=          # Required — MongoDB Atlas connection string
+APP_JWT_SECRET=        # Required — JWT auth
+LYZR_AGENT_BASE_URL=   # Optional — defaults to https://agent-prod.studio.lyzr.ai
+```
+
+---
+
+## Theme
+
+Light mode. CSS variables set inline in `page.tsx` (`THEME_VARS` object) using HSL strings. Primary accent: `258 72% 50%` (indigo purple). Background: `40 30% 97%` (warm off-white). Cards: `0 0% 100%` (white).
+
+The `Blade` component pattern (used in all sections) = `bg-card border border-border rounded-xl shadow-sm`.
+
+---
+
+## Important Deviations from Lyzr Template Rules
+
+- **`react-icons` IS used** alongside `lucide-react` (existing code uses `FiGitPullRequest`, `FiGitMerge` etc.) — don't remove them
+- **UI is NOT in a single `page.tsx`** — it's split across `app/sections/` files
+- **`/api/github/context/route.ts` is a custom route** that should not be removed — it powers the core conflict detection
+- **`app/sections/` files define their own `Blade`/`BladeHeader` helper components inline** — this is intentional
+
+---
+
 # Next.js React Frontend
 
 ## DO NOT EXPLORE — START BUILDING IMMEDIATELY
