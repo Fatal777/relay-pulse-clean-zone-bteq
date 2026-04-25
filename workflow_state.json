@@ -1,0 +1,43 @@
+{
+  "agent_ids": {
+    "decision_extraction_agent": "69ec53125a4288a9a1e231a4",
+    "pr_review_agent": "69ec532e38d52edd6342f1db",
+    "conflict_analysis_agent": "69ec532f950816878e84f0fa"
+  },
+  "database": {
+    "db_name": "app_e39fca2c655790a82971c1fc",
+    "collections": ["team_members", "decisions", "github_settings"],
+    "schema": {
+      "team_members": {
+        "name": "String (required)",
+        "github_username": "String (required)",
+        "role": "String (default: member)"
+      },
+      "decisions": {
+        "decision_text": "String (required)",
+        "decided_date": "String (required)",
+        "feature_area": "String (required)",
+        "source_notes": "String",
+        "confidence": "String"
+      },
+      "github_settings": {
+        "repo_owner": "String (required)",
+        "repo_name": "String (required)",
+        "github_token_ref": "String"
+      }
+    },
+    "auth_enabled": true
+  },
+  "tool_integrations": {
+    "github": {
+      "tool_source": "composio",
+      "actions": [
+        "GITHUB_CREATE_A_PULL_REQUEST",
+        "GITHUB_LIST_ISSUE_COMMENTS",
+        "GITHUB_COMPARE_TWO_COMMITS",
+        "GITHUB_CHECK_IF_A_PULL_REQUEST_HAS_BEEN_MERGED"
+      ],
+      "used_by": ["pr_review_agent", "conflict_analysis_agent"]
+    }
+  }
+}

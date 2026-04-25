@@ -1,0 +1,30 @@
+{
+  "agent_name": "Decision Extraction Agent",
+  "agent_id": "69ec53125a4288a9a1e231a4",
+  "description": "Parses pasted meeting notes or standup summaries, identifies and extracts structured decisions (what was decided, when, related feature/area)",
+  "agent_type": "json",
+  "accessor": "result",
+  "auto_generated": true,
+  "response_schema": {
+    "decisions": [
+      {
+        "decision_text": "string",
+        "decided_date": "string",
+        "feature_area": "string",
+        "confidence": "string"
+      }
+    ],
+    "summary": "string"
+  },
+  "example_response": {
+    "decisions": [
+      {
+        "decision_text": "sample string",
+        "decided_date": "sample string",
+        "feature_area": "sample string",
+        "confidence": "sample string"
+      }
+    ],
+    "summary": "sample string"
+  }
+}

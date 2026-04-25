@@ -1,0 +1,30 @@
+{
+  "agent_name": "PR Review Agent",
+  "agent_id": "69ec532e38d52edd6342f1db",
+  "description": "Generates an AI-powered review summary for a selected pull request, incorporating context about what other team members are working on",
+  "agent_type": "json",
+  "accessor": "result",
+  "auto_generated": true,
+  "response_schema": {
+    "summary": "string",
+    "key_changes": [
+      "string"
+    ],
+    "potential_issues": [
+      "string"
+    ],
+    "team_context": "string",
+    "recommendation": "string"
+  },
+  "example_response": {
+    "summary": "sample string",
+    "key_changes": [
+      "sample string"
+    ],
+    "potential_issues": [
+      "sample string"
+    ],
+    "team_context": "sample string",
+    "recommendation": "sample string"
+  }
+}
