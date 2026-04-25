@@ -1,171 +1,163 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
-import { FiSearch, FiFileText, FiCheck, FiX } from 'react-icons/fi'
+import { BookMarked, Search, Check, X, RefreshCw } from 'lucide-react'
 import { Loader2 } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
 
-interface DecisionItem {
-  _id?: string
-  decision_text: string
-  decided_date: string
-  feature_area: string
-  confidence?: string
-  source_notes?: string
-}
-
-interface ExtractedDecision {
-  decision_text?: string
-  decided_date?: string
-  feature_area?: string
-  confidence?: string
-}
+interface DecisionItem      { _id?: string; decision_text: string; decided_date: string; feature_area: string; confidence?: string; branch_id?: string }
+interface ExtractedDecision { decision_text?: string; decided_date?: string; feature_area?: string; confidence?: string }
 
 interface DecisionsPageProps {
-  decisions: DecisionItem[]
-  extractedDecisions: ExtractedDecision[]
-  extractionLoading: boolean
-  extractionSummary: string
-  activeAgentId: string | null
-  onExtractDecisions: (notes: string) => void
-  onSaveDecision: (d: ExtractedDecision) => void
-  onDismissExtracted: (index: number) => void
-  onRefreshDecisions: () => void
-  showSample: boolean
+  decisions:           DecisionItem[]
+  extractedDecisions:  ExtractedDecision[]
+  extractionLoading:   boolean
+  extractionSummary:   string
+  activeAgentId:       string | null
+  onExtractDecisions:  (notes: string) => void
+  onSaveDecision:      (d: ExtractedDecision) => void
+  onDismissExtracted:  (index: number) => void
+  onRefreshDecisions:  () => void
+  showSample:          boolean
 }
 
-const sampleDecisions: DecisionItem[] = [
-  { decision_text: 'Migrate auth to OAuth2 with PKCE flow', decided_date: '2026-04-20', feature_area: 'Authentication', confidence: 'high' },
-  { decision_text: 'Use PostgreSQL for analytics data warehouse', decided_date: '2026-04-18', feature_area: 'Infrastructure', confidence: 'high' },
-  { decision_text: 'Adopt Tailwind CSS v4 for the design system', decided_date: '2026-04-15', feature_area: 'Frontend', confidence: 'medium' },
-]
-
-function confidenceColor(c?: string) {
-  const val = (c ?? '').toLowerCase()
-  if (val.includes('high')) return 'bg-green-500/20 text-green-400 border-green-500/30'
-  if (val.includes('medium')) return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-  return 'bg-muted text-muted-foreground border-border'
+function confidenceChip(c?: string) {
+  const v = (c ?? '').toLowerCase()
+  if (v.includes('high'))   return 'safe-chip'
+  if (v.includes('medium')) return 'pending-chip'
+  return 'chip bg-muted text-muted-foreground border-border'
 }
 
-export default function DecisionsPage({ decisions, extractedDecisions, extractionLoading, extractionSummary, activeAgentId, onExtractDecisions, onSaveDecision, onDismissExtracted, onRefreshDecisions, showSample }: DecisionsPageProps) {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [featureFilter, setFeatureFilter] = useState('')
+export default function DecisionsPage({
+  decisions, extractedDecisions, extractionLoading, extractionSummary,
+  activeAgentId, onExtractDecisions, onSaveDecision, onDismissExtracted, onRefreshDecisions,
+}: DecisionsPageProps) {
+  const [search,      setSearch]      = useState('')
+  const [areaFilter,  setAreaFilter]  = useState('')
   const [meetingNotes, setMeetingNotes] = useState('')
 
-  const displayDecisions = showSample && decisions.length === 0 ? sampleDecisions : decisions
-  const filteredDecisions = displayDecisions.filter((d) => {
-    const matchesSearch = !searchQuery || (d.decision_text ?? '').toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesFeature = !featureFilter || (d.feature_area ?? '').toLowerCase().includes(featureFilter.toLowerCase())
-    return matchesSearch && matchesFeature
+  const filtered = decisions.filter((d) => {
+    const matchSearch = !search || d.decision_text.toLowerCase().includes(search.toLowerCase())
+    const matchArea   = !areaFilter || d.feature_area.toLowerCase().includes(areaFilter.toLowerCase())
+    return matchSearch && matchArea
   })
 
-  const featureAreas = Array.from(new Set(displayDecisions.map((d) => d.feature_area).filter(Boolean)))
+  const featureAreas = Array.from(new Set(decisions.map((d) => d.feature_area).filter(Boolean)))
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Decision Log</h1>
-        <p className="text-sm text-muted-foreground mt-1">Track architectural decisions and extract new ones from meeting notes.</p>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-[22px] font-bold text-foreground tracking-tight">Decision Log</h1>
+          <p className="text-[12.5px] text-muted-foreground mt-0.5">Architectural decisions, extracted from meeting notes and searchable forever.</p>
+        </div>
+        <button onClick={onRefreshDecisions} className="btn-ghost h-8 px-3 text-[12.5px] flex items-center gap-1.5">
+          <RefreshCw className="h-3.5 w-3.5" /> Refresh
+        </button>
       </div>
 
-      <Card className="border-border bg-card shadow-xl">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <FiFileText className="w-4 h-4 text-primary" />
-            Extract Decisions from Notes
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Textarea
-            placeholder="Paste your meeting notes or standup summary here..."
-            value={meetingNotes}
-            onChange={(e) => setMeetingNotes(e.target.value)}
-            rows={5}
-            className="bg-input border-border resize-none"
-          />
-          <Button onClick={() => onExtractDecisions(meetingNotes)} disabled={extractionLoading || !meetingNotes.trim()} className="w-full sm:w-auto">
-            {extractionLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Extracting...</> : 'Extract Decisions'}
-          </Button>
-          {extractionSummary && <p className="text-sm text-muted-foreground mt-2">{extractionSummary}</p>}
-        </CardContent>
-      </Card>
+      {/* Extract from notes */}
+      <div className="blade p-4 space-y-3">
+        <div>
+          <p className="text-[13.5px] font-semibold text-foreground">Extract Decisions from Notes</p>
+          <p className="text-[12px] text-muted-foreground mt-0.5">Paste any standup summary, meeting transcript, or notes.</p>
+        </div>
+        <Textarea
+          placeholder="We decided to use JWT with 7-day refresh tokens. The payment module will not handle refunds in v1…"
+          value={meetingNotes}
+          onChange={(e) => setMeetingNotes(e.target.value)}
+          rows={5}
+          className="relay-input resize-none"
+        />
+        <button
+          onClick={() => { onExtractDecisions(meetingNotes); setMeetingNotes('') }}
+          disabled={extractionLoading || !meetingNotes.trim()}
+          className="btn-primary h-8 px-3 text-[12.5px] disabled:opacity-50 flex items-center gap-1.5"
+        >
+          {extractionLoading ? (
+            <><Loader2 className="h-3.5 w-3.5 animate-spin" />Extracting…</>
+          ) : (
+            <><BookMarked className="h-3.5 w-3.5" />Extract Decisions</>
+          )}
+        </button>
+        {extractionSummary && (
+          <p className="text-[12px] text-muted-foreground">{extractionSummary}</p>
+        )}
+      </div>
 
+      {/* Extracted — pending save */}
       {extractedDecisions.length > 0 && (
-        <Card className="border-primary/30 bg-card shadow-xl">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold text-primary">Extracted Decisions - Review & Save</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {extractedDecisions.map((d, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-xl border border-border bg-secondary/20">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground">{d?.decision_text ?? 'No text'}</p>
-                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      <span className="text-xs text-muted-foreground">{d?.decided_date ?? 'No date'}</span>
-                      <Badge variant="secondary" className="text-xs">{d?.feature_area ?? 'General'}</Badge>
-                      {d?.confidence && <Badge className={`text-xs ${confidenceColor(d.confidence)}`}>{d.confidence}</Badge>}
-                    </div>
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    <Button size="sm" variant="ghost" onClick={() => onSaveDecision(d)} className="h-8 w-8 p-0 text-green-400 hover:text-green-300 hover:bg-green-500/10"><FiCheck className="w-4 h-4" /></Button>
-                    <Button size="sm" variant="ghost" onClick={() => onDismissExtracted(i)} className="h-8 w-8 p-0 text-destructive hover:text-red-300 hover:bg-destructive/10"><FiX className="w-4 h-4" /></Button>
-                  </div>
+        <div className="space-y-2">
+          <p className="section-label px-1">Extracted — Review & Save</p>
+          {extractedDecisions.map((d, i) => (
+            <div key={i} className="blade p-3 flex items-start gap-3 border-l-2 border-l-primary">
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] text-foreground leading-snug">{d.decision_text ?? 'No text'}</p>
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                  <span className="text-[11px] text-muted-foreground">{d.decided_date ?? '—'}</span>
+                  {d.feature_area && <span className="chip bg-muted text-muted-foreground border-border">{d.feature_area}</span>}
+                  {d.confidence   && <span className={confidenceChip(d.confidence)}>{d.confidence}</span>}
                 </div>
-              ))}
+              </div>
+              <div className="flex gap-1 shrink-0">
+                <button onClick={() => onSaveDecision(d)} className="h-7 w-7 grid place-items-center rounded-md text-safe hover:bg-safe/10 transition-colors"><Check className="h-3.5 w-3.5" /></button>
+                <button onClick={() => onDismissExtracted(i)} className="h-7 w-7 grid place-items-center rounded-md text-conflict hover:bg-conflict/10 transition-colors"><X className="h-3.5 w-3.5" /></button>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
       )}
 
-      <Card className="border-border bg-card shadow-xl">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <CardTitle className="text-base font-semibold">Decision History</CardTitle>
-            <Button size="sm" variant="ghost" onClick={onRefreshDecisions} className="text-xs text-muted-foreground">Refresh</Button>
+      {/* Decision history */}
+      <div className="blade">
+        <div className="px-4 py-3 border-b border-border">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[13px] font-semibold text-foreground">Recent Decisions ({decisions.length})</p>
           </div>
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <div className="relative flex-1 min-w-[200px]">
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search decisions..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 bg-input border-border" />
+          {/* Search */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-48">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search decisions…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="relay-input pl-8 h-8 text-[12.5px]"
+              />
             </div>
             {featureAreas.length > 0 && (
               <div className="flex gap-1 flex-wrap">
-                <Button size="sm" variant={featureFilter === '' ? 'default' : 'outline'} onClick={() => setFeatureFilter('')} className="text-xs h-8">All</Button>
-                {featureAreas.map((area) => (
-                  <Button key={area} size="sm" variant={featureFilter === area ? 'default' : 'outline'} onClick={() => setFeatureFilter(area)} className="text-xs h-8">{area}</Button>
+                <button onClick={() => setAreaFilter('')} className={`text-[11.5px] h-7 px-2.5 rounded-lg border transition-colors ${areaFilter === '' ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:text-foreground'}`}>All</button>
+                {featureAreas.slice(0, 5).map((a) => (
+                  <button key={a} onClick={() => setAreaFilter(a === areaFilter ? '' : a)} className={`text-[11.5px] h-7 px-2.5 rounded-lg border transition-colors ${areaFilter === a ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-border text-muted-foreground hover:text-foreground'}`}>{a}</button>
                 ))}
               </div>
             )}
           </div>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-72">
-            {filteredDecisions.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No decisions found. Extract some from your meeting notes above.</p>
-            ) : (
-              <div className="space-y-2">
-                {filteredDecisions.map((d, i) => (
-                  <div key={d._id ?? i} className="p-3 rounded-xl border border-border hover:border-primary/20 transition-colors">
-                    <p className="text-sm font-medium text-foreground">{d.decision_text}</p>
-                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      <span className="text-xs text-muted-foreground">{d.decided_date}</span>
-                      <Badge variant="secondary" className="text-xs">{d.feature_area}</Badge>
-                      {d.confidence && <Badge className={`text-xs ${confidenceColor(d.confidence)}`}>{d.confidence}</Badge>}
-                    </div>
-                  </div>
-                ))}
+        </div>
+
+        <div className="divide-y divide-border">
+          {filtered.length === 0 ? (
+            <div className="p-8 text-center">
+              <BookMarked className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-[13px] text-muted-foreground">No decisions yet. Extract some from your meeting notes above.</p>
+            </div>
+          ) : (
+            filtered.map((d, i) => (
+              <div key={d._id ?? i} className="px-4 py-3 hover:bg-muted/30 transition-colors">
+                <p className="text-[13px] text-foreground leading-snug">{d.decision_text}</p>
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                  <span className="text-[11px] text-muted-foreground">{d.decided_date}</span>
+                  {d.feature_area && <span className="chip bg-muted text-muted-foreground border-border">{d.feature_area}</span>}
+                  {d.confidence   && <span className={confidenceChip(d.confidence)}>{d.confidence}</span>}
+                  {d.branch_id    && <span className="chip bg-primary/8 text-primary border-primary/20">branch-linked</span>}
+                </div>
               </div>
-            )}
-          </ScrollArea>
-        </CardContent>
-      </Card>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   )
 }

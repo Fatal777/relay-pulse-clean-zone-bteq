@@ -8,7 +8,8 @@ export default async function getDecisionModel() {
       decided_date: { type: String, required: true },
       feature_area: { type: String, required: true },
       source_notes: { type: String },
-      confidence: { type: String },
+      confidence:   { type: String },
+      branch_id:    { type: String },  // optional link to a Branch session
     });
   }
   return _model;

@@ -92,11 +92,11 @@ export async function GET(req: NextRequest) {
     }
 
     const conflictingFiles: ConflictingFile[] = []
-    for (const [file, branchNames] of fileMap.entries()) {
+    fileMap.forEach((branchNames, file) => {
       if (branchNames.length > 1) {
         conflictingFiles.push({ file, branches: branchNames })
       }
-    }
+    })
 
     return NextResponse.json({
       owner,
