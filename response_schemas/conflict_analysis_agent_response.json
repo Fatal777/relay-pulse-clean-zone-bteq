@@ -1,0 +1,38 @@
+{
+  "agent_name": "Conflict Analysis Agent",
+  "agent_id": "69ec532f950816878e84f0fa",
+  "description": "Analyzes active branches across team members, detects file-level overlaps, and surfaces potential merge conflicts with severity indicators",
+  "agent_type": "json",
+  "accessor": "result",
+  "auto_generated": true,
+  "response_schema": {
+    "conflicts": [
+      {
+        "branch_a": "string",
+        "branch_b": "string",
+        "overlapping_files": [
+          "string"
+        ],
+        "severity": "string",
+        "recommendation": "string"
+      }
+    ],
+    "overall_risk": "string",
+    "summary": "string"
+  },
+  "example_response": {
+    "conflicts": [
+      {
+        "branch_a": "sample string",
+        "branch_b": "sample string",
+        "overlapping_files": [
+          "sample string"
+        ],
+        "severity": "sample string",
+        "recommendation": "sample string"
+      }
+    ],
+    "overall_risk": "sample string",
+    "summary": "sample string"
+  }
+}
